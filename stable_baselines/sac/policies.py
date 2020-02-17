@@ -191,7 +191,7 @@ class FeedForwardPolicy(SACPolicy):
         self.cnn_extractor = cnn_extractor
         self.reuse = reuse
         if layers is None:
-            layers = [64, 64]
+            layers = [256, 256, 256]
         self.layers = layers
         self.reg_loss = None
         self.reg_weight = reg_weight
@@ -306,25 +306,6 @@ class CnnPolicy(FeedForwardPolicy):
                                         feature_extraction="cnn", **_kwargs)
 
 
-class SQRPolicy(CnnPolicy):
-    """
-    Policy object that implements actor critic, using a CNN (the sqr CNN)
-
-    :param sess: (TensorFlow session) The current TensorFlow session
-    :param ob_space: (Gym Space) The observation space of the environment
-    :param ac_space: (Gym Space) The action space of the environment
-    :param n_env: (int) The number of environments to run
-    :param n_steps: (int) The number of steps to run for each environment
-    :param n_batch: (int) The number of batch to run (n_envs * n_steps)
-    :param reuse: (bool) If the policy is reusable or not
-    :param _kwargs: (dict) Extra keyword arguments for the nature CNN feature extraction
-    """
-
-    def __init__(self, sess, ob_space, ac_space, n_env, n_steps, n_batch, reuse=False, **_kwargs):
-        super(SQRPolicy, self).__init__(sess, ob_space, ac_space, n_env, n_steps, n_batch, reuse,
-                                        cnn_extractor=sqr_cnn, **_kwargs)
-
-
 class LnCnnPolicy(FeedForwardPolicy):
     """
     Policy object that implements actor critic, using a CNN (the nature CNN), with layer normalisation
@@ -381,8 +362,30 @@ class LnMlpPolicy(FeedForwardPolicy):
         super(LnMlpPolicy, self).__init__(sess, ob_space, ac_space, n_env, n_steps, n_batch, reuse,
                                           feature_extraction="mlp", layer_norm=True, **_kwargs)
 
+        
+
+class SQRPolicy(CnnPolicy):
+    """
+    Policy object that implements actor critic, using a CNN (the sqr CNN)
+
+    :param sess: (TensorFlow session) The current TensorFlow session
+    :param ob_space: (Gym Space) The observation space of the environment
+    :param ac_space: (Gym Space) The action space of the environment
+    :param n_env: (int) The number of environments to run
+    :param n_steps: (int) The number of steps to run for each environment
+    :param n_batch: (int) The number of batch to run (n_envs * n_steps)
+    :param reuse: (bool) If the policy is reusable or not
+    :param _kwargs: (dict) Extra keyword arguments for the nature CNN feature extraction
+    """
+
+    def __init__(self, sess, ob_space, ac_space, n_env=1, n_steps=1, n_batch=None, reuse=False, **_kwargs):
+        super(SQRPolicy, self).__init__(sess, ob_space, ac_space, n_env, n_steps, n_batch, reuse,
+                                        cnn_extractor=sqr_cnn, **_kwargs)
+
+        
 
 register_policy("CnnPolicy", CnnPolicy)
 register_policy("LnCnnPolicy", LnCnnPolicy)
 register_policy("MlpPolicy", MlpPolicy)
 register_policy("LnMlpPolicy", LnMlpPolicy)
+register_policy("SQRPolicy", SQRPolicy)

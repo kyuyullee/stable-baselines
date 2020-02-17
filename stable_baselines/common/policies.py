@@ -6,7 +6,7 @@ import numpy as np
 import tensorflow as tf
 from gym.spaces import Discrete
 
-from stable_baselines.a2c.utils import conv, causal_conv, linear, conv_to_fc, batch_to_seq, seq_to_batch, lstm
+from stable_baselines.a2c.utils import conv, causal_conv, sqr_conv1d, linear, conv_to_fc, batch_to_seq, seq_to_batch, lstm
 from stable_baselines.common.distributions import make_proba_dist_type, CategoricalProbabilityDistribution, \
     MultiCategoricalProbabilityDistribution, DiagGaussianProbabilityDistribution, BernoulliProbabilityDistribution
 from stable_baselines.common.input import observation_input
@@ -29,12 +29,22 @@ def nature_cnn(scaled_images, **kwargs):
 
 
 def sqr_cnn(features, **kwargs):
-    activ = tf.nn.rel
-    layer_1 = activ(causal_conv(features, 'c1', n_filters=32, filter_size=8, stride=1, dilation_rate=1, init_scale=np.sqrt(2), **kwargs))
-    layer_2 = activ(causal_conv(layer_1, 'c2', n_filters=64, filter_size=4, stride=1, dilation_rate=2, init_scale=np.sqrt(2), **kwargs))
-    layer_3 = activ(causal_conv(layer_2, 'c3', n_filters=64, filter_size=3, stride=1, dilation_rate=4, init_scale=np.sqrt(2), **kwargs))
+    activ = tf.nn.relu
+    #layer_1 = activ(causal_conv(features, 'c1', n_filters=32, filter_size=8, stride=1, dilation_rate=1, init_scale=np.sqrt(2), **kwargs))
+    #layer_2 = activ(causal_conv(layer_1, 'c2', n_filters=64, filter_size=4, stride=1, dilation_rate=2, init_scale=np.sqrt(2), **kwargs))
+    #layer_3 = activ(causal_conv(layer_2, 'c3', n_filters=64, filter_size=3, stride=1, dilation_rate=4, init_scale=np.sqrt(2), **kwargs))
+
+    #layer_1 = activ(sqr_conv1d(features, 'c1', n_filters=32, filter_size=8, stride=1, dilation_rate=1, init_scale=np.sqrt(2), **kwargs))
+    #layer_2 = activ(sqr_conv1d(layer_1, 'c2', n_filters=64, filter_size=4, stride=1, dilation_rate=2, init_scale=np.sqrt(2), **kwargs))
+    #layer_3 = activ(sqr_conv1d(layer_2, 'c3', n_filters=64, filter_size=3, stride=1, dilation_rate=4, init_scale=np.sqrt(2), **kwargs))
+
+    layer_1 = activ(conv(features, 'c1', n_filters=32, filter_size=[1,8], stride=4, init_scale=np.sqrt(2), **kwargs))
+    layer_2 = activ(conv(layer_1, 'c2', n_filters=64, filter_size=[1,8], stride=2, init_scale=np.sqrt(2), **kwargs))
+    layer_3 = activ(conv(layer_2, 'c3', n_filters=64, filter_size=[1,8], stride=1, init_scale=np.sqrt(2), **kwargs))
+    
     layer_3 = conv_to_fc(layer_3)
-    return activ(linear(layer_3, 'fc1', n_hidden=512, init_scale=np.sqrt(2)))
+    #print('layer3 fc shape', layer_3.shape)
+    return activ(linear(layer_3, 'fc1', n_hidden=256, init_scale=np.sqrt(2)))
 
 
 def mlp_extractor(flat_observations, net_arch, act_fun):

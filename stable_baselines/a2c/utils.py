@@ -5,48 +5,6 @@ import numpy as np
 import tensorflow as tf
 
 
-class CausalConv1D(tf.layers.Conv1D):
-    def __init__(self, filters,
-                 kernel_size,
-                 strides=1,
-                 dilation_rate=1,
-                 activation=None,
-                 use_bias=True,
-                 kernel_initializer=None,
-                 bias_initializer=tf.zeros_initializer(),
-                 kernel_regularizer=None,
-                 bias_regularizer=None,
-                 activity_regularizer=None,
-                 kernel_constraint=None,
-                 bias_constraint=None,
-                 trainable=True,
-                 name=None,
-                 **kwargs):
-        super(CausalConv1D, self).__init__(
-            filters=filters,
-            kernel_size=kernel_size,
-            strides=strides,
-            padding='valid',
-            data_format='channels_last',
-            dilation_rate=dilation_rate,
-            activation=activation,
-            use_bias=use_bias,
-            kernel_initializer=kernel_initializer,
-            bias_initializer=bias_initializer,
-            kernel_regularizer=kernel_regularizer,
-            bias_regularizer=bias_regularizer,
-            activity_regularizer=activity_regularizer,
-            kernel_constraint=kernel_constraint,
-            bias_constraint=bias_constraint,
-            trainable=trainable,
-            name=name, **kwargs
-        )
-
-    def call(self, inputs):
-        padding = (self.kernel_size[0] - 1) * self.dilation_rate[0]
-        inputs = tf.pad(inputs, tf.constant([(0, 0,), (1, 0), (0, 0)]) * padding)
-        return super(CausalConv1D, self).call(inputs)
-
 
 def sample(logits):
     """
@@ -182,6 +140,55 @@ def conv(input_tensor, scope, *, n_filters, filter_size, stride,
             bias = tf.reshape(bias, bshape)
         return bias + tf.nn.conv2d(input_tensor, weight, strides=strides, padding=pad, data_format=data_format)
 
+    
+class CausalConv1D(tf.layers.Conv1D):
+    """
+    Causal convolution operation.
+    It means that the convolution at time t only considers time t and before the t. 
+    
+    """
+    def __init__(self, filters,
+                 kernel_size,
+                 strides=1,
+                 dilation_rate=1,
+                 activation=None,
+                 use_bias=True,
+                 kernel_initializer=None,
+                 bias_initializer=tf.zeros_initializer(),
+                 kernel_regularizer=None,
+                 bias_regularizer=None,
+                 activity_regularizer=None,
+                 kernel_constraint=None,
+                 bias_constraint=None,
+                 trainable=True,
+                 name=None,
+                 **kwargs):
+        super(CausalConv1D, self).__init__(
+            filters=filters,
+            kernel_size=kernel_size,
+            strides=strides,
+            padding='valid',
+            data_format='channels_last',
+            dilation_rate=dilation_rate,
+            activation=activation,
+            use_bias=use_bias,
+            kernel_initializer=kernel_initializer,
+            bias_initializer=bias_initializer,
+            kernel_regularizer=kernel_regularizer,
+            bias_regularizer=bias_regularizer,
+            activity_regularizer=activity_regularizer,
+            kernel_constraint=kernel_constraint,
+            bias_constraint=bias_constraint,
+            trainable=trainable,
+            name=name, **kwargs
+        )
+
+    def call(self, inputs):
+        padding = (self.kernel_size[0] - 1) * self.dilation_rate[0]
+        inputs = tf.pad(inputs, tf.constant([(0, 0), (0, 0), (1, 0)]) * padding) # tf.constant([(0, 0,), (1, 0), (0, 0)]) * padding
+        print('inputs', inputs.shape)
+        return super(CausalConv1D, self).call(inputs)
+
 
 def causal_conv(input_tensor,
                 scope,
@@ -201,15 +208,19 @@ def causal_conv(input_tensor,
                 bias_constraint=None,
                 trainable=True,
                 init_scale=1.0,
-                data_format='NHWC',
+                data_format='NCW',
                 one_dim_bias=False,
                 name = None,
                 ** kwargs):
-    if data_format == 'NHWC':
+    """
+    Convolutional neural layer with causal convolution operation
+    """
+    print(input_tensor.shape)
+    if data_format == 'NWC':
         channel_ax = 2
         strides = [1, stride, 1]
         bshape = [1, 1, n_filters]
-    elif data_format == 'NCHW':
+    elif data_format == 'NCW':
         channel_ax = 1
         strides = [1, 1, stride]
         bshape = [1, n_filters, 1]
@@ -221,13 +232,11 @@ def causal_conv(input_tensor,
     with tf.variable_scope(scope):
         weight = tf.squeeze(tf.get_variable("w", wshape, initializer=ortho_init(init_scale)))
         bias = tf.get_variable("b", bias_var_shape, initializer=tf.constant_initializer(0.0))
-        if not one_dim_bias and data_format == 'NHWC':
+        if not one_dim_bias and data_format == 'NWC':
             bias = tf.reshape(bias, bshape)
-        CausalConv1D(filters=weight,
-                     kernel_size=len(weight),
-                     strides=strides,
-                     padding='valid',
-                     data_format='channels_last',
+        return bias + CausalConv1D(filters=weight,
+                     kernel_size=5,
+                     strides=stride,
                      dilation_rate=dilation_rate,
                      activation=activation,
                      use_bias=use_bias,
@@ -239,9 +248,59 @@ def causal_conv(input_tensor,
                      kernel_constraint=kernel_constraint,
                      bias_constraint=bias_constraint,
                      trainable=trainable,
-                     name=name, **kwargs)
-        return bias + CausalConv1D(input_tensor)
+                     name=name, **kwargs).call(input_tensor)
 
+
+def sqr_conv1d(input_tensor,
+                scope,
+                *,
+                n_filters,
+                filter_size,
+                stride=1,
+                dilation_rate=1,
+                activation=None,
+                use_bias=True,
+                kernel_initializer=None,
+                bias_initializer=tf.zeros_initializer(),
+                kernel_regularizer=None,
+                bias_regularizer=None,
+                activity_regularizer=None,
+                kernel_constraint=None,
+                bias_constraint=None,
+                trainable=True,
+                init_scale=1.0,
+                data_format='NCW',
+                one_dim_bias=False,
+                name = None,
+                ** kwargs):
+    """
+    This is a test convolutional neural layer to use tf.nn.conv1d()
+    """
+    print(input_tensor.shape)
+    if data_format == 'NWC':
+        channel_ax = 2
+        strides = [1, stride, 1]
+        bshape = [1, 1, n_filters]
+    elif data_format == 'NCW':
+        channel_ax = 1
+        strides = [1, 1, stride]
+        bshape = [1, n_filters, 1]
+    else:
+        raise NotImplementedError
+    bias_var_shape = [n_filters] if one_dim_bias else [1, n_filters, 1]
+    n_input = input_tensor.get_shape()[channel_ax].value
+    wshape = [1, filter_size, n_input, n_filters]
+    with tf.variable_scope(scope):
+        weight = tf.squeeze(tf.get_variable("w", wshape, initializer=ortho_init(init_scale)))
+        print('n filters', n_filters, '  weight size', weight.shape)
+        bias = tf.get_variable("b", bias_var_shape, initializer=tf.constant_initializer(0.0))
+        print('n filters', n_filters, '  bias size', bias.shape)
+        if not one_dim_bias and data_format == 'NWC':
+            bias = tf.reshape(bias, bshape)
+        
+        print('n filters', n_filters, '  bias size', bias.shape)
+        return bias + tf.nn.conv1d(input_tensor, weight, stride=stride, padding='SAME', data_format=data_format)
+    
 
 def linear(input_tensor, scope, n_hidden, *, init_scale=1.0, init_bias=0.0):
     """
