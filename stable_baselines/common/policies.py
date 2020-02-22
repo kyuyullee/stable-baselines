@@ -34,17 +34,10 @@ def sqr_cnn(features, **kwargs):
     #layer_2 = activ(causal_conv(layer_1, 'c2', n_filters=64, filter_size=4, stride=1, dilation_rate=2, init_scale=np.sqrt(2), **kwargs))
     #layer_3 = activ(causal_conv(layer_2, 'c3', n_filters=64, filter_size=3, stride=1, dilation_rate=4, init_scale=np.sqrt(2), **kwargs))
 
-    #layer_1 = activ(sqr_conv1d(features, 'c1', n_filters=32, filter_size=8, stride=1, dilation_rate=1, init_scale=np.sqrt(2), **kwargs))
-    #layer_2 = activ(sqr_conv1d(layer_1, 'c2', n_filters=64, filter_size=4, stride=1, dilation_rate=2, init_scale=np.sqrt(2), **kwargs))
-    #layer_3 = activ(sqr_conv1d(layer_2, 'c3', n_filters=64, filter_size=3, stride=1, dilation_rate=4, init_scale=np.sqrt(2), **kwargs))
-
-    layer_1 = activ(conv(features, 'c1', n_filters=32, filter_size=[1,8], stride=4, init_scale=np.sqrt(2), **kwargs))
-    layer_2 = activ(conv(layer_1, 'c2', n_filters=64, filter_size=[1,8], stride=2, init_scale=np.sqrt(2), **kwargs))
-    layer_3 = activ(conv(layer_2, 'c3', n_filters=64, filter_size=[1,8], stride=1, init_scale=np.sqrt(2), **kwargs))
-    
-    layer_3 = conv_to_fc(layer_3)
-    #print('layer3 fc shape', layer_3.shape)
-    return activ(linear(layer_3, 'fc1', n_hidden=256, init_scale=np.sqrt(2)))
+    layer_1 = activ(conv(features, 'c1', n_filters=32, filter_size=[1,16], stride=2, init_scale=np.sqrt(2), **kwargs))
+    layer_2 = activ(conv(layer_1, 'c2', n_filters=32, filter_size=[1,16], stride=1, init_scale=np.sqrt(2), **kwargs))
+    layer_2 = conv_to_fc(layer_2) # deep layers may cause overfitting
+    return activ(linear(layer_2, 'fc1', n_hidden=256, init_scale=np.sqrt(2)))
 
 
 def mlp_extractor(flat_observations, net_arch, act_fun):
