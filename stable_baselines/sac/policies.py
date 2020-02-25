@@ -49,7 +49,7 @@ def mlp(input_ph, layers, activ_fn=tf.nn.relu, layer_norm=False):
         output = tf.layers.dense(output, layer_size, name='fc' + str(i))
         if layer_norm:
             output = tf.contrib.layers.layer_norm(output, center=True, scale=True)
-        output = tf.nn.dropout(output, rate = 0.5)
+        
         output = activ_fn(output)
     return output
 
