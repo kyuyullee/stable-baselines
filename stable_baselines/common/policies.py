@@ -31,10 +31,10 @@ def nature_cnn(scaled_images, **kwargs):
 def sqr_cnn(features, **kwargs):
     activ = tf.nn.relu
    
-    layer_1 = activ(conv(features, 'c1', n_filters=kwargs['n_filters'][0], filter_size=[1,kwargs['filter_sizes'][0]], stride=kwargs['strides'][0], init_scale=np.sqrt(2), **kwargs))
-    layer_2 = activ(conv(layer_1, 'c2', n_filters=kwargs['n_filters'][1], filter_size=[1,kwargs['filter_sizes'][1]], stride=kwargs['strides'][1], init_scale=np.sqrt(2), **kwargs))
+    layer_1 = activ(conv(features, 'c1', n_filters=kwargs['filters_layer'][0], filter_size=[1,kwargs['filter_sizes_layer'][0]], stride=kwargs['strides_layer'][0], init_scale=np.sqrt(2)))
+    layer_2 = activ(conv(layer_1, 'c2', n_filters=kwargs['filters_layer'][1], filter_size=[1,kwargs['filter_sizes_layer'][1]], stride=kwargs['strides_layer'][1], init_scale=np.sqrt(2)))
     layer_2 = conv_to_fc(layer_2) # deep layers may cause overfitting
-    return activ(linear(layer_2, 'fc1', n_hidden=kwargs['layers'][0], init_scale=np.sqrt(2)))
+    return activ(linear(layer_2, 'fc1', n_hidden=kwargs['layers_fc'][0], init_scale=np.sqrt(2)))
     #layer_1 = activ(causal_conv(features, 'c1', n_filters=32, filter_size=8, stride=1, dilation_rate=1, init_scale=np.sqrt(2), **kwargs))
     #layer_2 = activ(causal_conv(layer_1, 'c2', n_filters=64, filter_size=4, stride=1, dilation_rate=2, init_scale=np.sqrt(2), **kwargs))
     #layer_3 = activ(causal_conv(layer_2, 'c3', n_filters=64, filter_size=3, stride=1, dilation_rate=4, init_scale=np.sqrt(2), **kwargs))
