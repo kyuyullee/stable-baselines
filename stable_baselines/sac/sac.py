@@ -499,6 +499,7 @@ class SAC(OffPolicyRLModel):
                     logger.dumpkvs()
                     # Reset infos:
                     infos_values = []
+
             return self
 
     def action_probability(self, observation, state=None, mask=None, actions=None, logp=False):
